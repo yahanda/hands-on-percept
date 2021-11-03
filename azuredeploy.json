@@ -46,22 +46,7 @@
           "name": "Transformation",
           "properties": {
             "streamingUnits": 1,
-            "query": "SELECT
-                        Percept.ArrayValue.label,
-                        Percept.ArrayValue.confidence,
-                        GetArrayElement(Percept.ArrayValue.bbox, 0) AS bbox0,
-                        GetArrayElement(Percept.ArrayValue.bbox, 1) AS bbox1,
-                        GetArrayElement(Percept.ArrayValue.bbox, 2) AS bbox2,
-                        GetArrayElement(Percept.ArrayValue.bbox, 3) AS bbox3,
-                        CAST (udf.main(Percept.ArrayValue.timestamp) as DateTime) as DETECTION_TIMESTAMP,
-                        Percept.ArrayValue.timestamp
-                      INTO
-                        [adls]
-                      FROM
-                        [iothub] as event
-                      CROSS APPLY GetArrayElements(event.Neural_Network) AS Percept
-                      WHERE
-                        CAST(Percept.ArrayValue.confidence as Float) > 0.5"
+            "query": "SELECT\r\n  Percept.ArrayValue.label,\r\n  Percept.ArrayValue.confidence,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 0) AS bbox0,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 1) AS bbox1,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 2) AS bbox2,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 3) AS bbox3,\r\n  CAST (udf.main(Percept.ArrayValue.timestamp) as DateTime) as DETECTION_TIMESTAMP,\r\n  Percept.ArrayValue.timestamp\r\nINTO\r\n  [adls]\r\nFROM\r\n  [iothub] as event\r\nCROSS APPLY GetArrayElements(event.Neural_Network) AS Percept\r\nWHERE\r\n  CAST(Percept.ArrayValue.confidence as Float) > 0.5"
           }
         },
         "functions": [
