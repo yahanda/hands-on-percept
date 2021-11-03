@@ -35,13 +35,22 @@
     },
     {
       "type": "Microsoft.StreamAnalytics/StreamingJobs",
-      "apiVersion": "2019-06-01",
+      "apiVersion": "2017-04-01-preview",
       "name": "[variables('streamAnalyticsJobName')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "sku": {
           "name": "standard"
         },
+        "outputErrorPolicy": "stop",
+        "eventsOutOfOrderPolicy": "adjust",
+        "eventsOutOfOrderMaxDelayInSeconds": 0,
+        "eventsLateArrivalMaxDelayInSeconds": 5,
+        "contentStoragePolicy": "SystemAccount",
+        "jobType": "Cloud",
+        "dataLocale": "en-US",
+        "jobStorageAccount": "[json('null')]",
+        "compatibilityLevel": "1.2",
         "transformation": {
           "name": "Transformation",
           "properties": {
