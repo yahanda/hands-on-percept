@@ -89,7 +89,7 @@
                     }
                   ]
                 },
-                "Serialization": {
+                "serialization": {
                   "Properties": {
                     "Encoding": "UTF8",
                     "Format": "LineSeparated"
@@ -109,6 +109,13 @@
                   "serviceBusNamespace": "[variables('serviceBusNamespaceName')]",
                   "sharedAccessPolicyKey": "[listKeys(concat(resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName')),'/AuthorizationRules/RootManageSharedAccessKey'), '2015-08-01').primaryKey]",
                   "sharedAccessPolicyName": "RootManageSharedAccessKey"
+                },
+                "serialization": {
+                  "Properties": {
+                    "Encoding": "UTF8",
+                    "Format": "LineSeparated"
+                  },
+                  "Type": "Json"
                 }
               }
             }
