@@ -80,7 +80,7 @@
                 "type": "Microsoft.Storage/Blob",
                 "properties": {
                   "container": "iotdata",
-                  "dateFormat": "YYYY/MM/DD",
+                  "dateFormat": "yyyy/MM/dd",
                   "pathPattern": "stream/device/{date}",
                   "storageAccounts": [
                     {
@@ -88,6 +88,13 @@
                       "accountName": "[variables('storageAccountName')]"
                     }
                   ]
+                },
+                "Serialization": {
+                  "Properties": {
+                    "Encoding": "UTF8",
+                    "Format": "LineSeparated"
+                  },
+                  "Type": "Json"
                 }
               }
             }
