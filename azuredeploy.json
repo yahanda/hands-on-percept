@@ -48,7 +48,58 @@
             "streamingUnits": 1,
             "query": "SELECT\r\n    *\r\nINTO\r\n    [YourOutputAlias]\r\nFROM\r\n    [YourInputAlias]"
           }
-        }
+        },
+        "inputs": [
+          {
+            "Name": "IoTHubInputLable",
+            "Properties": {
+              "DataSource": {
+                "Properties": {
+                  "iotHubNamespace": "[variables('iotHubName')]",
+                  "sharedAccessPolicyKey": "[listkeys(resourceId('Microsoft.Devices/IotHubs/IotHubKeys',variables('iotHubName'), 'iothubowner'),'2016-02-03').primaryKey]",
+                  "sharedAccessPolicyName": "iothubowner",
+                  "endpoint": "messages/events"
+                },
+                "Type": "Microsoft.Devices/IotHubs"
+              },
+              "Serialization": {
+                "Properties": {
+                  "Encoding": "UTF8"
+                },
+                "Type": "Json"
+              },
+              "Type": "Stream"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "adls",
+            "type": "Microsoft.Storage/Blob",
+            "properties": {
+              "authenticationMode": "CONNECTION_STRING",
+              "container": "iotdata",
+              "dateFormat": "YYYY/MM/DD",
+              "pathPattern": "stream/device/{date}",
+              "storageAccounts": [
+                {
+                  "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value]",
+                  "accountName": "[variables('storageAccountName')]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "servicebus",
+            "type": "Microsoft.ServiceBus/Queue",
+            "properties": {
+              "queueName": "alertqueue",
+              "serviceBusNamespace": "[variables('serviceBusNamespaceName')]",
+              "sharedAccessPolicyKey": "[listKeys(concat(resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName')),'/AuthorizationRules/RootManageSharedAccessKey'), '2015-08-01').primaryKey]",
+              "sharedAccessPolicyName": "RootManageSharedAccessKey"
+            }
+          }
+        ]
       }
     },
     {
