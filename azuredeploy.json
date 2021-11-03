@@ -46,7 +46,22 @@
           "name": "Transformation",
           "properties": {
             "streamingUnits": 1,
-            "query": "SELECT\r\n    *\r\nINTO\r\n    [YourOutputAlias]\r\nFROM\r\n    [YourInputAlias]"
+            "query": "SELECT
+                        Percept.ArrayValue.label,
+                        Percept.ArrayValue.confidence,
+                        GetArrayElement(Percept.ArrayValue.bbox, 0) AS bbox0,
+                        GetArrayElement(Percept.ArrayValue.bbox, 1) AS bbox1,
+                        GetArrayElement(Percept.ArrayValue.bbox, 2) AS bbox2,
+                        GetArrayElement(Percept.ArrayValue.bbox, 3) AS bbox3,
+                        CAST (udf.main(Percept.ArrayValue.timestamp) as DateTime) as DETECTION_TIMESTAMP,
+                        Percept.ArrayValue.timestamp
+                      INTO
+                        [adls]
+                      FROM
+                        [iothub] as event
+                      CROSS APPLY GetArrayElements(event.Neural_Network) AS Percept
+                      WHERE
+                        CAST(Percept.ArrayValue.confidence as Float) > 0.5"
           }
         },
         "functions": [
@@ -58,8 +73,7 @@
               "properties": {
                 "inputs": [
                   {
-                    "dataType": "any",
-                    "isConfigurationParameter": null
+                    "dataType": "any"
                   }
                 ],
                 "output": {
