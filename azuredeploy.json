@@ -128,7 +128,7 @@
                 "type": "Parquet"
               },
               "timeWindow": "00:02:00",
-              "sizeWindow": "2000"
+              "sizeWindow": 2000
             }
           },
           {
