@@ -18,9 +18,9 @@
     "defaultDataLakeStorageAccountUrl": "[concat('https://', variables('storageAccountName'), '.dfs.core.windows.net')]",
     "defaultDataLakeStorageFilesystemName": "workspace",
     "storageBlobDataContributorRoleID": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+    "serviceBusNamespaceName": "[concat(parameters('prefix'), '-servicebus-', substring(uniqueString(resourceGroup().id), 0, 6))]",
     "logicAppName": "[concat(parameters('prefix'), '-logic-', substring(uniqueString(resourceGroup().id), 0, 6))]",
-    "workflowSchema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-    "serviceBusNamespaceName": "[concat(parameters('prefix'), '-servicebus-', substring(uniqueString(resourceGroup().id), 0, 6))]"
+    "workflowSchema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#"
   },
   "resources": [
     {
@@ -51,24 +51,24 @@
         },
         "inputs": [
           {
-            "Name": "iothub",
-            "Properties": {
-              "DataSource": {
-                "Properties": {
+            "name": "iothub",
+            "properties": {
+              "datasource": {
+                "type": "Microsoft.Devices/IotHubs",
+                "properties": {
                   "iotHubNamespace": "[variables('iotHubName')]",
                   "sharedAccessPolicyKey": "[listkeys(resourceId('Microsoft.Devices/IotHubs/IotHubKeys',variables('iotHubName'), 'iothubowner'),'2016-02-03').primaryKey]",
                   "sharedAccessPolicyName": "iothubowner",
                   "endpoint": "messages/events"
-                },
-                "Type": "Microsoft.Devices/IotHubs"
+                }
               },
-              "Serialization": {
-                "Properties": {
-                  "Encoding": "UTF8"
+              "serialization": {
+                "properties": {
+                  "encoding": "UTF8"
                 },
-                "Type": "Json"
+                "type": "Json"
               },
-              "Type": "Stream"
+              "type": "Stream"
             }
           }
         ],
@@ -91,11 +91,11 @@
                 }
               },
               "serialization": {
-                "Properties": {
-                  "Encoding": "UTF8",
-                  "Format": "LineSeparated"
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
                 },
-                "Type": "Json"
+                "type": "Json"
               }
             }
           },
@@ -112,11 +112,11 @@
                 }
               },
               "serialization": {
-                "Properties": {
-                  "Encoding": "UTF8",
-                  "Format": "LineSeparated"
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
                 },
-                "Type": "Json"
+                "type": "Json"
               }
             }
           }
@@ -176,7 +176,6 @@
               "apiVersion": "2018-09-01-preview",
               "name": "[concat(variables('storageAccountName'), '/default/', variables('defaultDataLakeStorageFilesystemName'), '/Microsoft.Authorization/',  guid(concat(resourceGroup().id, '/', variables('storageBlobDataContributorRoleID'), '/', variables('synapseAnalyticsName'))))]",
               "location": "[resourceGroup().location]",
-
               "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataContributorRoleID'))]",
                 "principalId": "[reference(concat('Microsoft.Synapse/workspaces/', variables('synapseAnalyticsName')), '2019-06-01-preview', 'Full').identity.principalId]",
@@ -255,18 +254,6 @@
       }
     },
     {
-      "type": "Microsoft.Logic/workflows",
-      "apiVersion": "2019-05-01",
-      "name": "[variables('logicAppName')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "definition": {
-          "$schema": "[variables('workflowSchema')]",
-          "contentVersion": "1.0.0.0"
-        }
-      }
-    },
-    {
       "type": "Microsoft.ServiceBus/namespaces",
       "apiVersion": "2017-04-01",
       "name": "[variables('serviceBusNamespaceName')]",
@@ -283,6 +270,18 @@
       "dependsOn": [
         "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
       ]
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[variables('logicAppName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "definition": {
+          "$schema": "[variables('workflowSchema')]",
+          "contentVersion": "1.0.0.0"
+        }
+      }
     }
   ]
 }
