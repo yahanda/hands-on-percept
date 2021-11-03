@@ -51,7 +51,7 @@
         },
         "functions": [
           {
-            "name": "GetCurrentDateTime",
+            "name": "main",
             "type": "Microsoft.StreamAnalytics/streamingjobs/functions",
             "properties": {
               "type": "Scalar",
@@ -68,12 +68,7 @@
                 "binding": {
                   "type": "Microsoft.StreamAnalytics/JavascriptUdf",
                   "properties": {
-                    "script": "function main(nanoseconds) {
-                        var epoch = nanoseconds * 0.000000001;
-                        var d = new Date(0);
-                        d.setUTCSeconds(epoch);
-                        return (d.toISOString());
-                      }"
+                    "script": "function main(nanoseconds) {\n var epoch = nanoseconds * 0.000000001;\n var d = new Date(0);\n d.setUTCSeconds(epoch);\n return (d.toISOString());\n }"
                   }
                 }
               }
