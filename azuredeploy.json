@@ -79,7 +79,6 @@
               "datasource": {
                 "type": "Microsoft.Storage/Blob",
                 "properties": {
-                  "authenticationMode": "CONNECTION_STRING",
                   "container": "iotdata",
                   "dateFormat": "YYYY/MM/DD",
                   "pathPattern": "stream/device/{date}",
