@@ -1,0 +1,237 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "defaultValue": "yourname",
+      "metadata": {
+        "description": "Define the prefix for all objects."
+      }
+    }
+  },
+  "variables": {
+    "iotHubName": "[concat(parameters('prefix'), '-iothub-', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    "streamAnalyticsJobName": "[concat(parameters('prefix'), '-asa-', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    "storageAccountName": "[concat(parameters('prefix'), 'storage', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    "storageBlobDataContributorRoleID": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+    "serviceBusNamespaceName": "[concat(parameters('prefix'), '-servicebus-', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    "logicAppName": "[concat(parameters('prefix'), '-logic-', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    "workflowSchema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Devices/IotHubs",
+      "apiVersion": "2021-03-31",
+      "name": "[variables('IoTHubName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "S1",
+        "capacity": "1"
+      }
+    },
+    {
+      "type": "Microsoft.StreamAnalytics/StreamingJobs",
+      "apiVersion": "2017-04-01-preview",
+      "name": "[variables('streamAnalyticsJobName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "name": "standard"
+        },
+        "outputErrorPolicy": "stop",
+        "eventsOutOfOrderPolicy": "adjust",
+        "eventsOutOfOrderMaxDelayInSeconds": 0,
+        "eventsLateArrivalMaxDelayInSeconds": 5,
+        "contentStoragePolicy": "SystemAccount",
+        "jobType": "Cloud",
+        "dataLocale": "en-US",
+        "jobStorageAccount": "[json('null')]",
+        "compatibilityLevel": "1.2",
+        "transformation": {
+          "name": "Transformation",
+          "properties": {
+            "streamingUnits": 1,
+            "query": "SELECT\r\n  Percept.ArrayValue.label,\r\n  Percept.ArrayValue.confidence,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 0) AS bbox0,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 1) AS bbox1,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 2) AS bbox2,\r\n  GetArrayElement(Percept.ArrayValue.bbox, 3) AS bbox3,\r\n  CAST (udf.main(Percept.ArrayValue.timestamp) as DateTime) as DETECTION_TIMESTAMP,\r\n  Percept.ArrayValue.timestamp\r\nINTO\r\n  [adls]\r\nFROM\r\n  [iothub] as event\r\nCROSS APPLY GetArrayElements(event.Neural_Network) AS Percept\r\nWHERE\r\n  CAST(Percept.ArrayValue.confidence as Float) > 0.5\r\n\r\nSELECT\r\n  Percept.ArrayValue.label,\r\n  COUNT(*),\r\n  System.Timestamp AS WinEndTime\r\nINTO\r\n  [servicebus]\r\nFROM\r\n  [iothub] as event\r\nCROSS APPLY GetArrayElements(event.Neural_Network) AS Percept\r\nGROUP BY Percept.ArrayValue.label, HoppingWindow(second, 10, 5)"
+          }
+        },
+        "functions": [
+          {
+            "name": "main",
+            "type": "Microsoft.StreamAnalytics/streamingjobs/functions",
+            "properties": {
+              "type": "Scalar",
+              "properties": {
+                "inputs": [
+                  {
+                    "dataType": "any"
+                  }
+                ],
+                "output": {
+                  "dataType": "any"
+                },
+                "binding": {
+                  "type": "Microsoft.StreamAnalytics/JavascriptUdf",
+                  "properties": {
+                    "script": "function main(nanoseconds) {\n var epoch = nanoseconds * 0.000000001;\n var d = new Date(0);\n d.setUTCSeconds(epoch);\n return (d.toISOString());\n }"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "inputs": [
+          {
+            "name": "iothub",
+            "properties": {
+              "datasource": {
+                "type": "Microsoft.Devices/IotHubs",
+                "properties": {
+                  "iotHubNamespace": "[variables('iotHubName')]",
+                  "sharedAccessPolicyKey": "[listkeys(resourceId('Microsoft.Devices/IotHubs/IotHubKeys',variables('iotHubName'), 'iothubowner'),'2016-02-03').primaryKey]",
+                  "sharedAccessPolicyName": "iothubowner",
+                  "endpoint": "messages/events"
+                }
+              },
+              "serialization": {
+                "properties": {
+                  "encoding": "UTF8"
+                },
+                "type": "Json"
+              },
+              "type": "Stream"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "adls",
+            "properties": {
+              "datasource": {
+                "type": "Microsoft.Storage/Blob",
+                "properties": {
+                  "container": "iotdata",
+                  "dateFormat": "yyyy/MM/dd",
+                  "pathPattern": "stream/device/{date}",
+                  "storageAccounts": [
+                    {
+                      "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value]",
+                      "accountName": "[variables('storageAccountName')]"
+                    }
+                  ]
+                }
+              },
+              "serialization": {
+                "type": "Csv",
+                "properties": {
+                  "encoding": "UTF8",
+                  "fieldDelimiter": ","
+                }
+              }
+            }
+          },
+          {
+            "name": "servicebus",
+            "properties": {
+              "datasource": {
+                "type": "Microsoft.ServiceBus/Queue",
+                "properties": {
+                  "queueName": "alertqueue",
+                  "serviceBusNamespace": "[variables('serviceBusNamespaceName')]",
+                  "sharedAccessPolicyKey": "[listKeys(concat(resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName')),'/AuthorizationRules/RootManageSharedAccessKey'), '2015-08-01').primaryKey]",
+                  "sharedAccessPolicyName": "RootManageSharedAccessKey"
+                }
+              },
+              "serialization": {
+                "properties": {
+                  "encoding": "UTF8",
+                  "format": "LineSeparated"
+                },
+                "type": "Json"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-04-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_RAGRS",
+        "tier": "Standard"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "isHnsEnabled": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "services": {
+            "file": {
+              "enabled": true
+            },
+            "blob": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2019-04-01",
+      "name": "[concat(variables('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "cors": {
+          "corsRules": []
+        },
+        "deleteRetentionPolicy": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2017-04-01",
+      "name": "[variables('serviceBusNamespaceName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2017-04-01",
+      "name": "[format('{0}/{1}', variables('serviceBusNamespaceName'), 'alertqueue')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[variables('logicAppName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "definition": {
+          "$schema": "[variables('workflowSchema')]",
+          "contentVersion": "1.0.0.0"
+        }
+      }
+    }
+  ]
+}

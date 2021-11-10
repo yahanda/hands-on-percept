@@ -11,5 +11,10 @@ under construction
 
 ## Deploy
 
+Full version
+
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fyahanda%2Fhands-on-percept%2Fmain%2Fazuredeploy.json)
 
+Simple version (without Synapse Analytics)
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fyahanda%2Fhands-on-percept%2Fmain%2Fazuredeploy-simple.json)
