@@ -4,7 +4,8 @@
 In this hands-on lab, you will implement an Azure IoT + AI solution. You will learn how to build and deploy edge AI solutions with no coding using Azure Percept DK. You will learn how to visualize the AI inferences. You will learn how to leverage Azure Percept DK by developying an end-to-end IoT solution.
 
 ## Solution architecture
-under construction
+(sorry for only Japanese)
+![arch](https://raw.githubusercontent.com/wiki/yahanda/hands-on-percept/hands-on-arch.jpg)
 
 ## Requirements
 under construction
