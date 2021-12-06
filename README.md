@@ -5,6 +5,8 @@ In this hands-on lab, you will implement an Azure IoT + AI solution. You will le
 
 ## Solution architecture
 (sorry for only Japanese)
+
+The hands-on slide deck is available [here](https://github.com/yahanda/hands-on-percept/blob/main/PerceptWorkshop.pdf).
 ![arch](https://raw.githubusercontent.com/wiki/yahanda/hands-on-percept/hands-on-arch.jpg)
 
 ## Requirements
